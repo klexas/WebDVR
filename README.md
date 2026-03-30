@@ -1,3 +1,3 @@
 ### WebDVR - Stream/Video recorder/downloader in Electron. 
 
-<img width="2554" height="1337" alt="image" src="https://github.com/user-attachments/assets/b40750c9-6f9a-49ee-96b8-daa22eabaaa0" />
+<img width="2554" height="1334" alt="image" src="https://github.com/user-attachments/assets/8d74d458-b64e-4450-816c-2f9e942a7aee" />
