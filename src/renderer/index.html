@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <title>VidDL</title>
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body>
+
+  <!-- Toolbar -->
+  <div id="toolbar">
+    <button id="btn-back"    class="nav-btn" title="Back">&#8592;</button>
+    <button id="btn-forward" class="nav-btn" title="Forward">&#8594;</button>
+    <button id="btn-reload"  class="nav-btn" title="Reload">&#8635;</button>
+    <div id="url-bar-wrapper">
+      <input id="url-input" type="text" placeholder="Enter a URL..." spellcheck="false" autocomplete="off" />
+    </div>
+    <button id="btn-go" class="go-btn">Go</button>
+    <div id="loading-spinner" class="loading-spinner hidden"></div>
+  </div>
+
+  <!-- Main layout -->
+  <div id="layout">
+    <aside id="sidebar">
+
+      <!-- Controls -->
+      <section class="sidebar-section">
+        <h3 class="section-title">Controls</h3>
+        <button id="btn-find-streams" class="primary-btn">
+          &#9654;&nbsp; Find Video Streams
+        </button>
+        <div class="monitor-row">
+          <span class="monitor-label">Monitor New Streams</span>
+          <label class="toggle" title="Automatically detect streams as they load">
+            <input type="checkbox" id="monitor-toggle" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Stream Results -->
+      <section class="sidebar-section streams-section">
+        <div class="section-header">
+          <h3 class="section-title">Streams</h3>
+          <span id="stream-count" class="badge">0</span>
+          <button id="btn-clear" class="icon-btn" title="Clear results">&#x2715;</button>
+        </div>
+        <div id="stream-list">
+          <p class="empty-state">No streams detected yet.<br/>Right-click a stream to download.</p>
+        </div>
+      </section>
+
+      <!-- Downloads -->
+      <section class="sidebar-section downloads-section">
+        <div class="section-header">
+          <h3 class="section-title">Downloads</h3>
+          <span id="download-count" class="badge">0</span>
+        </div>
+        <div id="download-list">
+          <p class="empty-state">No downloads yet.</p>
+        </div>
+      </section>
+
+      <!-- Settings -->
+      <section class="sidebar-section settings-section">
+        <button class="section-toggle" id="settings-toggle" aria-expanded="false">
+          <h3 class="section-title">Settings</h3>
+          <span class="chevron" id="settings-chevron">&#8964;</span>
+        </button>
+        <div id="settings-content" class="collapsible">
+
+          <div class="setting-item">
+            <label class="setting-label" for="setting-dl-path">Download Folder</label>
+            <div class="path-row">
+              <input id="setting-dl-path" class="setting-input" type="text" readonly placeholder="Not set" />
+              <button class="browse-btn" id="btn-browse-dl-path" title="Browse">&#8230;</button>
+            </div>
+          </div>
+
+          <div class="setting-item">
+            <label class="setting-label" for="setting-quality">Default Quality</label>
+            <select id="setting-quality" class="setting-select">
+              <option value="best">Best available</option>
+              <option value="1080p">1080p</option>
+              <option value="720p">720p</option>
+              <option value="480p">480p</option>
+              <option value="360p">360p</option>
+              <option value="audio">Audio only</option>
+            </select>
+          </div>
+
+          <div class="setting-item">
+            <label class="setting-label" for="setting-filename">Filename Template</label>
+            <input id="setting-filename" class="setting-input" type="text" placeholder="{title}.{ext}" />
+            <p class="setting-hint">Tokens: {title} {ext} {url}</p>
+          </div>
+
+          <div class="setting-item">
+            <label class="setting-label" for="setting-concurrent">Max Concurrent Downloads</label>
+            <input id="setting-concurrent" class="setting-input number-input" type="number" min="1" max="5" />
+          </div>
+
+          <div class="setting-divider"></div>
+          <p class="setting-group-label">Tools</p>
+
+          <div class="setting-item">
+            <label class="setting-label" for="setting-ffmpeg">ffmpeg Path</label>
+            <div class="path-row">
+              <input id="setting-ffmpeg" class="setting-input" type="text" placeholder="Auto-detect" />
+              <button class="browse-btn" id="btn-browse-ffmpeg" title="Browse">&#8230;</button>
+            </div>
+            <button class="detect-btn" id="btn-detect-ffmpeg">Auto-detect</button>
+            <p id="ffmpeg-status" class="tool-status"></p>
+          </div>
+
+          <div class="setting-item">
+            <label class="setting-label" for="setting-ytdlp">yt-dlp Path</label>
+            <div class="path-row">
+              <input id="setting-ytdlp" class="setting-input" type="text" placeholder="Auto-detect" />
+              <button class="browse-btn" id="btn-browse-ytdlp" title="Browse">&#8230;</button>
+            </div>
+            <button class="detect-btn" id="btn-detect-ytdlp">Auto-detect</button>
+            <p id="ytdlp-status" class="tool-status"></p>
+          </div>
+
+          <button class="save-settings-btn" id="btn-save-settings">Save Settings</button>
+          <p id="settings-save-status" class="tool-status"></p>
+
+        </div>
+      </section>
+
+    </aside>
+
+    <div id="resize-handle" title="Drag to resize"></div>
+
+    <!-- WebContentsView renders over this region -->
+    <div id="browser-area"></div>
+  </div>
+
+  <!-- ── Context menu ─────────────────────────────────────────────────────── -->
+  <div id="context-menu" class="context-menu hidden">
+    <button class="ctx-item" id="ctx-download">&#11123;&nbsp; Download</button>
+    <button class="ctx-item" id="ctx-download-as">&#9998;&nbsp; Download As&hellip;</button>
+    <div class="ctx-separator"></div>
+    <button class="ctx-item" id="ctx-copy-url">&#128203;&nbsp; Copy URL</button>
+  </div>
+
+  <!-- ── Download As modal ────────────────────────────────────────────────── -->
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <h2 class="modal-title" id="modal-title">Download As</h2>
+
+      <div class="modal-stream-preview">
+        <span id="modal-type-badge" class="type-badge">HLS</span>
+        <span id="modal-stream-url" class="modal-url"></span>
+      </div>
+
+      <div class="modal-field">
+        <label class="modal-label" for="modal-filename">Filename</label>
+        <div class="filename-row">
+          <input id="modal-filename" class="modal-input filename-stem" type="text" spellcheck="false" />
+          <span id="modal-ext" class="filename-ext"></span>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="modal-btn modal-cancel" id="modal-cancel">Cancel</button>
+        <button class="modal-btn modal-confirm" id="modal-confirm">Download</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../dist/renderer/renderer.js"></script>
+</body>
+</html>
