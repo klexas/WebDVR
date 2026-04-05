@@ -13,10 +13,11 @@ export function setupIpcHandlers(
   });
 
   // ── Browser ──────────────────────────────────────────────────────────────────
-  ipcMain.handle('browser:navigate', (_, url: string) => browser.navigate(url));
-  ipcMain.handle('browser:back',     () => browser.goBack());
-  ipcMain.handle('browser:forward',  () => browser.goForward());
-  ipcMain.handle('browser:reload',   () => browser.reload());
+  ipcMain.handle('browser:navigate',    (_, url: string) => browser.navigate(url));
+  ipcMain.handle('browser:back',        () => browser.goBack());
+  ipcMain.handle('browser:forward',     () => browser.goForward());
+  ipcMain.handle('browser:reload',      () => browser.reload());
+  ipcMain.handle('browser:devtools',    () => browser.openDevTools());
 
   // ── Streams ──────────────────────────────────────────────────────────────────
   ipcMain.handle('streams:find', async () => {

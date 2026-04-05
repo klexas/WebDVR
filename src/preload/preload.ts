@@ -7,7 +7,8 @@ contextBridge.exposeInMainWorld('vidDl', {
   navigate: (url: string) => ipcRenderer.invoke('browser:navigate', url),
   back:     ()            => ipcRenderer.invoke('browser:back'),
   forward:  ()            => ipcRenderer.invoke('browser:forward'),
-  reload:   ()            => ipcRenderer.invoke('browser:reload'),
+  reload:      ()         => ipcRenderer.invoke('browser:reload'),
+  openDevTools: ()        => ipcRenderer.invoke('browser:devtools'),
 
   // Stream detection
   findStreams:  () => ipcRenderer.invoke('streams:find'),

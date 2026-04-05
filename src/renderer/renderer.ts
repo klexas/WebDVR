@@ -35,6 +35,7 @@ interface VidDlAPI {
   back: () => Promise<void>;
   forward: () => Promise<void>;
   reload: () => Promise<void>;
+  openDevTools: () => Promise<void>;
   findStreams: () => Promise<StreamInfo[]>;
   getStreams: () => Promise<StreamInfo[]>;
   clearStreams: () => Promise<void>;
@@ -202,6 +203,8 @@ function navigate(): void {
 
 el.btnGo.addEventListener('click', navigate);
 el.urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') navigate(); });
+// F12 opens DevTools for the embedded browser (detached window)
+document.addEventListener('keydown', (e) => { if (e.key === 'F12') vidDl.openDevTools(); });
 el.btnBack.addEventListener('click', () => vidDl.back());
 el.btnForward.addEventListener('click', () => vidDl.forward());
 el.btnReload.addEventListener('click', () => vidDl.reload());

@@ -54,14 +54,34 @@ export class Downloader {
 
   private spawnFfmpeg(id: string, url: string, output: string, ffmpegPath: string): void {
     const bin = ffmpegPath || 'ffmpeg';
-    const args = [
-      '-i', url,
-      '-c', 'copy',
+
+    const isHls = /\.m3u8/i.test(url) || /googlevideo\.com\/api\/manifest\/hls/i.test(url);
+
+    const args: string[] = [];
+
+    if (isHls) {
+      // Allow the full protocol chain required by HLS:
+      //   HTTPS manifest → redirects → individual TS/fMP4 segments
+      args.push('-protocol_whitelist', 'file,http,https,tcp,tls,crypto');
+      // Reconnect on transient network errors mid-stream
+      args.push('-reconnect', '1', '-reconnect_at_eof', '1',
+                '-reconnect_streamed', '1', '-reconnect_delay_max', '5');
+    }
+
+    args.push('-i', url, '-c', 'copy');
+
+    if (isHls) {
+      // Convert ADTS audio (used in MPEG-TS HLS segments) to the ASC format
+      // that the MP4 container requires.  This is a no-op for fMP4-based HLS.
+      args.push('-bsf:a', 'aac_adtstoasc');
+    }
+
+    args.push(
       '-progress', '-',  // structured key=value progress on stdout
       '-nostats',
       '-y',
       output,
-    ];
+    );
 
     let proc: ChildProcess;
     try {
@@ -77,10 +97,16 @@ export class Downloader {
     this.processes.set(id, proc);
 
     let totalSecs = 0;
+    let lastStderrLines: string[] = [];
 
     // Parse total duration from ffmpeg's informational stderr output
     proc.stderr?.on('data', (chunk: Buffer) => {
       const text = chunk.toString();
+
+      // Keep a rolling buffer of the last few lines for error reporting
+      lastStderrLines.push(...text.split('\n').filter(Boolean));
+      if (lastStderrLines.length > 10) lastStderrLines = lastStderrLines.slice(-10);
+
       const m = text.match(/Duration:\s+(\d+):(\d+):(\d+(?:\.\d+)?)/);
       if (m) {
         totalSecs =
@@ -137,7 +163,12 @@ export class Downloader {
         task.progress = 100;
       } else {
         task.status = 'error';
-        task.error = `ffmpeg exited with code ${code}`;
+        // Surface the last ffmpeg stderr line that looks like an error
+        const errorLine = [...lastStderrLines].reverse()
+          .find(l => /error|invalid|fail|no such|unable/i.test(l))
+          ?? lastStderrLines.at(-1)
+          ?? `ffmpeg exited with code ${code}`;
+        task.error = errorLine.trim();
       }
       this.onUpdate({ ...task });
     });
